@@ -1,10 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace requests_task.Dto
+namespace requests_task.Dto;
+public sealed class RequestsDto
 {
-    public sealed class RequestsDto
-    {
-        [Required]
-        public string Resource { get; set; }
-    }
+    [Required]
+    public string Resource { get; set; }
 }

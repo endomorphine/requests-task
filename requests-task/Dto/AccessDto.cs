@@ -1,14 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
-//using requests_task.Entities;
+using requests_task.Entities;
 
-namespace requests_task.Dto
+namespace requests_task.Dto;
+
+public sealed class AccessDto
 {
-    public sealed class AccessDto
-    {
-        [Required]
-        public string Resource { get; set; }
+    [Required]
+    public string Resource { get; set; }
 
-        [Required]
-        public string Decision { get; set; }
-    }
+    [Required]
+    [EnumDataType(typeof(Decision))]
+    public Decision Decision { get; set; }
 }

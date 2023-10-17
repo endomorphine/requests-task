@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Concurrent;
 using requests_task.Dto;
 using requests_task.Entities;
 
@@ -8,42 +9,41 @@ namespace requests_task.Controllers;
 [Route("api/")]
 public class ApiController : ControllerBase
 {
-    private static Request? _sharedRequest;
-    private static CancellationTokenSource? _cancellationTokenSource;
-    private const string DEFAULT_RESOURCE = "my-res";
+    private const int TIMEOUT_DELAY = 20;
+
+    private static readonly ConcurrentDictionary<string, Request> PendingRequests = new();
 
     [HttpPost("requests")]
     public async Task<IActionResult> Requests([FromBody] RequestsDto dto)
     {
-        if (!ModelState.IsValid || dto.Resource != DEFAULT_RESOURCE)
+        if (!ModelState.IsValid)
             return BadRequest();
 
-        _sharedRequest = new Request { Resource = dto.Resource };
-        _cancellationTokenSource = new CancellationTokenSource();
-        var token = _cancellationTokenSource.Token;
-
+        var request = PendingRequests.GetOrAdd(dto.Resource, _ => new Request(dto.Resource, new CancellationTokenSource()));
+        
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(20), token);
-            _sharedRequest.Decision = "Denied";
-            return Ok(_sharedRequest.ToDto("Timeout expired"));
+            await Task.Delay(TimeSpan.FromSeconds(TIMEOUT_DELAY), request.CancellationTokenSource.Token);
         }
         catch (TaskCanceledException)
         {
-            return Ok(_sharedRequest.ToDto(_sharedRequest.Decision == "Denied" ? "Denied by user" : "Granted"));
+            PendingRequests.Remove(dto.Resource, out _);
+            return Ok(request.ToDto());
         }
+
+        return Ok(ResponseDto.GetTimeoutDto(request.Resource));
     }
 
     [HttpPost("access")]
     public IActionResult Access([FromBody] AccessDto dto)
     {
-        if (!ModelState.IsValid || dto.Resource != DEFAULT_RESOURCE)
+        if (!ModelState.IsValid)
             return BadRequest();
 
-        if (_sharedRequest != null && _sharedRequest.Resource == dto.Resource)
+        if (PendingRequests.TryGetValue(dto.Resource, out var request))
         {
-            _sharedRequest.Decision = dto.Decision;
-            _cancellationTokenSource.Cancel();
+            request.Decision = dto.Decision;
+            request.CancellationTokenSource.Cancel();
         }
 
         return Ok();
