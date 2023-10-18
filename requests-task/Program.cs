@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using requests_task.Configuration;
 
 namespace requests_task;
 
@@ -8,10 +9,10 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
+        builder.Services.Configure<TimeoutSettings>(builder.Configuration.GetSection("TimeoutSettings"));
 
         builder.Services.AddControllers()
-                        .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())); ;
+                        .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();

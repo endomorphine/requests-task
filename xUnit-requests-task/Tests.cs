@@ -3,6 +3,7 @@ using requests_task;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using requests_task.Common;
 using requests_task.Dto;
 using requests_task.Entities;
@@ -22,10 +23,16 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
 
     public Tests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddConfiguration(Utilities.GetTestConfiguration());
+            });
+        });
     }
 
-    [Fact]
+    [Fact] // coupled request
     public async Task PostRequestsThenAccess_ValidRequest_ReturnsOk()
     {
         var client = _factory.CreateClient();
@@ -44,7 +51,7 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
 
         }), Task.Run(async () =>
         {
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
             var accessDto = new AccessDto { Resource = EXAMPLE_RESOURCE, Decision = Decision.Deny };
             var json = JsonSerializer.Serialize(accessDto);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -93,7 +100,7 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
     public async Task PostAccess_ValidRequest_ReturnsOk()
     {
         var client = _factory.CreateClient();
-        var accessDto = new AccessDto { Resource = "example_resource", Decision = Decision.Grant };
+        var accessDto = new AccessDto { Resource = EXAMPLE_RESOURCE, Decision = Decision.Grant };
         var json = JsonSerializer.Serialize(accessDto);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using requests_task.Dto;
 using requests_task.Entities;
+using requests_task.Configuration;
 
 namespace requests_task.Controllers;
 
@@ -9,9 +11,13 @@ namespace requests_task.Controllers;
 [Route("api/")]
 public class ApiController : ControllerBase
 {
-    private const int TIMEOUT_DELAY = 20;
-
+    private readonly int _requestTimeoutSeconds;
     private static readonly ConcurrentDictionary<string, Request> PendingRequests = new();
+
+    public ApiController(IOptions<TimeoutSettings> timeoutSettings)
+    {
+        _requestTimeoutSeconds = timeoutSettings.Value.RequestTimeoutSeconds;
+    }
 
     [HttpPost("requests")]
     public async Task<IActionResult> Requests([FromBody] RequestsDto dto)
@@ -23,7 +29,7 @@ public class ApiController : ControllerBase
         
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(TIMEOUT_DELAY), request.CancellationTokenSource.Token);
+            await Task.Delay(TimeSpan.FromSeconds(_requestTimeoutSeconds), request.CancellationTokenSource.Token);
         }
         catch (TaskCanceledException)
         {
