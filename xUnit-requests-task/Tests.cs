@@ -25,8 +25,6 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
         _factory = factory;
     }
 
-    #region CoupledRequest
-
     [Fact]
     public async Task PostRequestsThenAccess_ValidRequest_ReturnsOk()
     {
@@ -69,11 +67,6 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(ReasonMsg.DeniedByUser, responseObject.Reason);
     }
 
-
-    #endregion
-
-    #region RequestsTests
-
     [Fact]
     public async Task PostRequests_ValidRequest_ReturnsTimeout()
     {
@@ -95,11 +88,6 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(DecisionMsg.DeniedMsg, responseObject.Decision);
         Assert.Equal(ReasonMsg.Timeout, responseObject.Reason);
     }
-
-
-    #endregion
-
-    #region AccessTests
 
     [Fact]
     public async Task PostAccess_ValidRequest_ReturnsOk()
@@ -124,7 +112,5 @@ public class Tests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
-
-    #endregion
 
 }
